@@ -1,6 +1,5 @@
 /** Class representing a unit of a soldier that can attack */
 class Unit {
-
 	/**
 	 * Create a Unit
 	 * @ param {string} name - Name of a Unit
@@ -46,11 +45,12 @@ class Unit {
 		console.log(`${unitsDefending[rand].name} is hurt, health=${unitsDefending[rand].health}`);
 		this.recharge(unitsDefending);
 	}
- 	/** Method for checking if Unit i alive and for filtering dead enemy units
+
+	/** Method for checking if Unit i alive and for filtering dead enemy units
 	 * @param {Array.<Unit> } arrayOfUnits - Array of enemy units
 	 */
 	attacks(arrayOfUnits) {
-		/**Checking if each member of array is Unit. */
+		/** Checking if each member of array is Unit. */
 		arrayOfUnits.forEach((x) => { if (!(x instanceof Unit)) throw new TypeError('Class Unit, method attack, passed array its element are not instanceof Unit'); });
 
 
