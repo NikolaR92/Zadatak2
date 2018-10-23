@@ -1,87 +1,37 @@
-const EventEmiiter = require('events');
-
+/** Class representing a unit of a soldier that can attack */
 class Unit {
+
+	/**
+	 * Create a Unit
+	 * @ param {string} name - Name of a Unit
+	 */
 	constructor(name) {
-		this._name = name;
-		this._health = 100;
-		this._rechargeTime = 1000;
-		this._damage = 1;
-		this._criticalChance = 0;
+		this.nameVar = name;
+		this.healthVar = 100;
+		this.rechargeTimeVar = 1000;
+		this.damageVar = 1;
+		this.criticalChanceVar = 0;
 	}
 
-	// promis function
-	// recharges Units attack
-	// argument: unit - object of class Units
-	// return: Promis object
-	recharge(unit) {
-		if (!(unit instanceof Unit)) throw new TypeError('Class Unit, method recharge, passed value is not instanceof Unit');
-		return new Promise((resolve) => {
-			for (let i = 0; i <= unit.rechargeTime; i += 1);
-			resolve(`${unit.name} is ready to attack`);
-		});
+	/**
+		* Method for recharging Unit attacks
+		*
+		* @param {Array.<Unit>} arrayOfUnits Array of enemy units
+		*/
+	recharge(arrayOfUnits) {
+		const that = this;
+		const methodCall = function methodCall() {
+			that.attacks(arrayOfUnits);
+		};
+
+		setTimeout(methodCall, this.rechargeTime);
 	}
 
-	// Generator function that with promis functio generates async behaver
-	// function waits for each attack to reacharge and calls attack functions
-	// arguments: emmiter - object of class EventEmiiter
-	//            arrayOfUnits - array of Units class objects
-	* attacks(emmiter, arrayOfUnits) {
-		if (!(emmiter instanceof EventEmiiter)) {
-			throw new TypeError('Class Unit, method attack, passed value is not instanceof EventEmiiter');
-		}
-		arrayOfUnits.forEach((x) => { if (!(x instanceof Unit)) throw new TypeError('Class Unit, method attack, passed array its element are not instanceof Unit'); });
 
-
-		let arrayOfUnits1 = arrayOfUnits.filter(unit => unit.name !== this.name);
-
-
-		while (true) {
-			this.rechargeTime = this.health;
-			yield this.recharge(this);
-			this.damage = this.health;
-			this.criticalChance = this.health;
-			arrayOfUnits1 = arrayOfUnits1.filter(unit => unit.health > 0);
-			if (this.health <= 0 || arrayOfUnits1.length === 0) break;
-			this.attack(arrayOfUnits1, emmiter);
-		}
-		if (this.health > 0) console.log(`${this.name} is victorious`);
-		else {
-			console.log(`${this.name} is dead`);
-		}
-	}
-
-	//  method thats calls generator function and iterates through each value
-	//  arguments: emmiter - object of class EventEmiiter
-	//               arrayOfUnits - array of objects of Unit class
-	//  return: Promise
-	begin(emmiter, arrayOfUnits) {
-		if (!(emmiter instanceof EventEmiiter)) {
-			throw new TypeError('Class Unit, method begin, passed value is not instanceof EventEmiiter');
-		}
-		arrayOfUnits.forEach((x) => {
-			if (!(x instanceof Unit)) throw new TypeError('Class Unit, method begin, passed array its element are not instanceof Unit');
-		});
-
-
-		const iterator = this.attacks(emmiter, arrayOfUnits);
-		function iterate(iteration) {
-			if (iteration.done) return iteration.value;
-			const promise = iteration.value;
-			return promise.then((x) => {
-				console.log(x);
-				iterate(iterator.next());
-			});
-		}
-		return iterate(iterator.next());
-	}
-
-	// method calculates attack damage and message the defending unit about the attack
-	// arguments: unitsDefending - array of objects units
-	//            emmiter -  object of class EventEmiiter
-	attack(unitsDefending, emmiter) {
-		if (!(emmiter instanceof EventEmiiter)) {
-			throw new TypeError('Class Unit, method attack, passed value is not instanceof EventEmiiter');
-		}
+	/** Method calculates attack damage and attacks defending unit.
+	 * @param {Array.<Unit>} unitsDefending - Array of enemy units
+	 */
+	attack(unitsDefending) {
 		unitsDefending.forEach((x) => { if (!(x instanceof Unit)) throw new TypeError('Class Unit, method attack, passed array its element are not instanceof Unit'); });
 		const len = unitsDefending.length;
 		const rand = Math.floor(Math.random() * (len));
@@ -92,41 +42,93 @@ class Unit {
 		} else {
 			console.log(`${this.name} attacks ${unitsDefending[rand].name} for ${damageOfUnit} damage`);
 		}
-		emmiter.emit(unitsDefending[rand].name, damageOfUnit, unitsDefending[rand]);
+		unitsDefending[rand].health -= damageOfUnit;
+		console.log(`${unitsDefending[rand].name} is hurt, health=${unitsDefending[rand].health}`);
+		this.recharge(unitsDefending);
 	}
+ 	/** Method for checking if Unit i alive and for filtering dead enemy units
+	 * @param {Array.<Unit> } arrayOfUnits - Array of enemy units
+	 */
+	attacks(arrayOfUnits) {
+		/**Checking if each member of array is Unit. */
+		arrayOfUnits.forEach((x) => { if (!(x instanceof Unit)) throw new TypeError('Class Unit, method attack, passed array its element are not instanceof Unit'); });
 
-	//  method that listens for attack event
-	// arguments: emmiter - object of class EventEmiiter
-	defending(emmiter) {
-		if (!(emmiter instanceof EventEmiiter)) {
-			throw new TypeError('Class Unit, method defending, passed value is not instanceof EventEmiiter');
+
+		let arrayOfUnits1 = arrayOfUnits.filter(unit => unit.name !== this.name);
+
+		this.rechargeTime = this.health;
+		this.damage = this.health;
+		this.criticalChance = this.health;
+		arrayOfUnits1 = arrayOfUnits1.filter(unit => unit.health > 0);
+		if (this.health > 0 && arrayOfUnits1.length === 0) {
+			console.log(`${this.name} is victorious`);
+		} else if (this.health <= 0) {
+			console.log(`${this.name} is dead`);
+		} else {
+			this.attack(arrayOfUnits1);
 		}
-		emmiter.on(this.name, (damage, object) => {
-			if (!Number.isFinite(damage)) throw new TypeError('Class Unit, method defending,first argument passed to method on is not a number');
-			object.health -= damage;
-			console.log(`${object.name} is hurt, health=${object.health}`);
-		});
 	}
 
-	get name() { return this._name; }
+	/**
+		* Get the name value
+		* @return {string} The name value
+		*/
+	get name() { return this.nameVar; }
 
-	set name(name) { this._name = name; }
+	/**
+	 * Sets the name value
+	 * @param {string} name- Name of the Unit
+	 */
+	set name(name) { this.nameVar = name; }
 
-	get health() { return this._health; }
+	/**
+	 * Get the health value
+	 * @return {number} The current health value
+	 */
+	get health() { return this.healthVar; }
 
-	set health(health) { this._health = health; }
+	/**
+	 * Sets the health value
+	 * @param {number} health- New health value of Unit
+	 */
+	set health(health) { this.healthVar = health; }
 
-	get rechargeTime() { return this._rechargeTime; }
+	/**
+	 * Get the recharge time value
+	 * @return {number} The current recharge time
+	 */
+	get rechargeTime() { return this.rechargeTimeVar; }
 
-	set rechargeTime(health) { this._rechargeTime = 1000 * health / 100; }
+	/**
+	 * Sets the recharge time based on current health value
+	 * @param {number} health - Current health value of Unit
+	 */
+	set rechargeTime(health) { this.rechargeTimeVar = 1000 * health / 100; }
 
-	get damage() { return this._damage; }
+	/**
+	 * Get the attack damage value
+	 * @return {number} Current attack damage value
+	 */
+	get damage() { return this.damageVar; }
 
-	set damage(health) { this._damage = health / 100; }
+	/**
+	 * Sets the damage of Unit based on current health
+	 * @param {number} health - Current health of Unit
+	 */
+	set damage(health) { this.damageVar = health / 100; }
 
-	get criticalChance() { return this._criticalChance; }
+	/**
+	 * Get the critical chance for doing extra damag for Unit
+	 * @return {number} Current critical chance value of Unit
+	 */
+	get criticalChance() { return this.criticalChanceVar; }
 
-	set criticalChance(health) { this._criticalChance = 10 - health / 10; }
+	/**
+	 * Set critical chance of Unit based on current health
+	 * @param {number} health - Current health of Unit
+	 */
+	set criticalChance(health) { this.criticalChanceVar = 10 - health / 10; }
 }
+
 
 module.exports = Unit;
